@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     13785,        427]
-NotebookOptionsPosition[     12799,        388]
-NotebookOutlinePosition[     13137,        403]
-CellTagsIndexPosition[     13094,        400]
+NotebookDataLength[     13739,        423]
+NotebookOptionsPosition[     12777,        386]
+NotebookOutlinePosition[     13115,        401]
+CellTagsIndexPosition[     13072,        398]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -366,8 +366,6 @@ Cell[BoxData[
   3.689600638965644*^9, 3.689601674544055*^9}]
 }, Open  ]],
 
-Cell[CellGroupData[{
-
 Cell[BoxData[
  RowBox[{"VectorPlot3D", "[", 
   RowBox[{"B", ",", 
@@ -381,10 +379,10 @@ Cell[BoxData[
     RowBox[{"z", ",", "9", ",", "10"}], "}"}]}], "]"}]], "Input",
  CellChangeTimes->{{3.689600132743929*^9, 3.689600217812601*^9}}],
 
-Cell[BoxData["$Aborted"], "Output",
- CellChangeTimes->{{3.6896002121999283`*^9, 3.68960021830626*^9}, 
-   3.6896009124716883`*^9, 3.689603954018033*^9}]
-}, Open  ]]
+Cell[BoxData[
+ RowBox[{"\[IndentingNewLine]", 
+  RowBox[{"Simpliy", "[", "arp", "]"}]}]], "Input",
+ CellChangeTimes->{{3.689604242045269*^9, 3.689604249044169*^9}}]
 },
 WindowSize->{1847, 1056},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
@@ -425,10 +423,8 @@ Cell[CellGroupData[{
 Cell[6973, 216, 530, 14, 37, "Input"],
 Cell[7506, 232, 4691, 133, 109, "Output"]
 }, Open  ]],
-Cell[CellGroupData[{
-Cell[12234, 370, 394, 11, 32, "Input"],
-Cell[12631, 383, 152, 2, 32, "Output"]
-}, Open  ]]
+Cell[12212, 368, 394, 11, 32, "Input"],
+Cell[12609, 381, 164, 3, 55, InheritFromParent]
 }
 ]
 *)

@@ -84,6 +84,6 @@ class Model(object):
         pass
 
 if __name__ == "__main__":
-    solenoid = Solenoid(0.025, 0.5)
     magnet = Levitron()
+    solenoid = Solenoid(0.025, 0.5)
     m = Model(solenoid, magnet)
