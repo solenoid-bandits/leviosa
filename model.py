@@ -1,8 +1,12 @@
 # Units : SI Units
 import numpy as np
-from scipy.integrate import ode
+import scipy
+from scipy.integrate import quad as integrate
+from matplotlib import pyplot as plt
 
-mu0 = 4e-7 * np.pi
+pi = np.pi
+
+mu0 = 4e-7 * pi
 
 def vec(*args):
     return np.atleast_2d(args).T
@@ -42,16 +46,29 @@ class Solenoid(Magnet):
         self.radius = radius
         self.length = length
         self.loops = loops
-        self.current = 0
+        self.current = 0.0
 
     def pos(self, t):
         # Parametrized position of the wire
         # t = 0.0 ~ 1.0
         # at t = 1.0, theta = 2*pi*self.loops
-        x = self.radius * sin(2 * np.pi * self.loops * t)
-        y = self.radius * cos(2 * np.pi * self.loops * t)
-        z = self.length / self.loops * l
-        return vec(x,y,z)
+        x = self.radius * np.cos(2 * pi * self.loops * t)
+        y = self.radius * np.sin(2 * pi * self.loops * t)
+        z = self.length * t
+        # returns column vector
+        if len(t) > 1:
+            return np.vstack((x,y,z))
+        else:
+            return vec(x, y, z)
+
+    def d_pos(self,t):
+        dx = - self.radius * 2 * pi * np.sin(2*pi * self.loops * t)
+        dy = self.radius * 2 * pi * np.cos(2*pi*self.loops*t)
+        dz = self.length * np.ones(t.shape)
+        if len(t) > 1:
+            return np.vstack((dx,dy,dz))
+        else:
+            return vec(dx, dy, dz)
 
     def set_current(self, current):
         self.current = current
@@ -59,13 +76,25 @@ class Solenoid(Magnet):
     def field(self, position):
         # Biot-Savart Law
         pos_local = position
-        # TODO : actually perform conversion
-        # pos_local = translate(rotate(position))
 
-        # B(pos)
-        # dp = pos_local - pos(t)
-        # B = mu0/4*pi * self.current * Integrate(Cross(differentiate(pos(t), t), dp) / abs(dp)**3, t)
-        # return B
+        # pos_local = translate(rotate(position))
+        # doesn't matter since solenoid definition is in global coordinates
+
+        def integrand(t):
+            pos = self.pos(t)
+            dp = np.subtract(pos_local, pos) # difference in position
+            dpt = self.d_pos(t)
+            c = np.cross(dpt, dp, axis=0)
+            m = np.linalg.norm(dp, axis=0)
+            res = c / (m**3)
+            return res
+
+        t = np.linspace(0.0, 1.0, 10000)
+        y = integrand(t)
+        Bi = np.trapz(y, t, axis=1)
+        #Bi = integrate(integrand, 0.0, 1.0)
+        B = mu0/4 * pi * self.current * Bi
+        return B
 
 class Model(object):
     def __init__(self,solenoid,magnet):
@@ -85,5 +114,16 @@ class Model(object):
 
 if __name__ == "__main__":
     magnet = Levitron()
-    solenoid = Solenoid(0.025, 0.5)
+    solenoid = Solenoid(1.0,0.01,1.0)
+    solenoid.set_current(1.0)
+
+    Bs = []
+    for i in range(100):
+        z = i * 0.01
+        B = solenoid.field(vec(0,0,z))
+        Bs.append(B[2])
+    print Bs
+    plt.plot(Bs)
+    plt.show()
+
     m = Model(solenoid, magnet)
