@@ -103,9 +103,9 @@ class Solenoid(Magnet):
         B = mu0/4 * pi * self.current * Bi
         return B
 	
-	def force(self, position, Levitron):
+	def force(self, field, position, Levitron):
 		# Taking field from the above method
-		field = self.field()
+		self.field = field()
 		magMoment = Levitron.magMoment()
 		return np.gradient(field * magMoment)
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     for i in range(100):
         z = i * 0.01
         B = solenoid.field(vec(0,0,z))
-        F = solenoid.force(vec(0,0,z), magnet)
+        F = solenoid.force(B, vec(0,0,z), magnet)
         Bs.append(B[2])
         Fs.append(F[2])
     print Bs
