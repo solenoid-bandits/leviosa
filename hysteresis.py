@@ -32,7 +32,7 @@ DeltaH = 10
 Nfirst = 125 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
 Ndown = 250
 Nup = 250
-val = 200 # sample value of H applied field (A/m)
+val = 250 # sample value of H applied field (A/m)
 
 for i in range(Nfirst):
     H.append(H[i] + DeltaH)
@@ -63,7 +63,7 @@ for i in range(Nfirst + Ndown + Nup):
     Mirr.append(Mirr[i] + dMirrdH[i + 1] * (H[i+1] - H[i]))
     M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
     if (H[i] == val):
-        B_field = H[i]*mu0
+        B_field = H[i]*mu0*(1000.0)
         print str(B_field) + ' Teslas'
 
 plt.xlabel('Applied magnetic field H (A/m)')

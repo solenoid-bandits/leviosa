@@ -5,7 +5,6 @@ from scipy.integrate import quad as integrate
 from matplotlib import pyplot as plt
 
 pi = np.pi
-
 mu0 = 4e-7 * pi
 
 def vec(*args):
@@ -33,12 +32,14 @@ class Levitron(Magnet):
     # The object to levitate
     # Assumed to be neodymium, cylinder
     def __init__(self, pose=None):
-        super(Levitron, self).__init__(pose)        
+        super(Levitron, self).__init__(pose)
         # magnetic susceptibility of magnet
-        self.x_M = 1 
+        self.x_M = 1
         pass
     def field(self, current, position):
         # depends on H-Field
+        # NOTHING HERE omg
+        # can't proceed without defining field for permanent magnet
         pass
     # Magnetic Field Strength, H:
     def fieldStrength(self, current, position):
@@ -102,8 +103,8 @@ class Solenoid(Magnet):
         #Bi = integrate(integrand, 0.0, 1.0)
         B = mu0/4 * pi * self.current * Bi
         return B
-	
-	def force(self, field, position, Levitron):
+
+	def force(self, position, magMoment_val):
 		# Taking field from the above method
 		self.field = field()
 		magMoment = Levitron.magMoment()
@@ -136,7 +137,9 @@ if __name__ == "__main__":
     for i in range(100):
         z = i * 0.01
         B = solenoid.field(vec(0,0,z))
-        F = solenoid.force(B, vec(0,0,z), magnet)
+        fstr = magnet.fieldStrength(1.0,vec(0,0,z))
+        magMoment_val = magnet.magMoment(fstr)
+        F = Solenoid.force(vec(0,0,z), magMoment_val)
         Bs.append(B[2])
         Fs.append(F[2])
     print Bs
