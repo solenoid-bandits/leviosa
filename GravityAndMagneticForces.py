@@ -106,7 +106,7 @@ class Solenoid(Magnet):
 
 	def force(self, position, magMoment_val):
 		# Taking field from the above method
-		field = self.field()
+		self.field = field()
 		magMoment = Levitron.magMoment()
 		return np.gradient(field * magMoment)
 
