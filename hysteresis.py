@@ -1,5 +1,12 @@
-# Hysteresis module by Anderson Ang
-# Inspired by the Jiles-Atherton Model, 1984
+"""
+Hysteresis module by Anderson Ang
+V1.2
+Changelog
+- Refined delta function to have a step value of 1
+- Added plot points to find specific M value for a given H (on all curves)
+- Added anhysteric array splices and added polyfit (numpy) for higher M accuracy
+Inspired by the Jiles-Atherton Model, 1984
+"""
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -26,13 +33,13 @@ Mirr = [0]
 M = [0]
 
 # Tracks change of ext field H (permeance) to magnetization
-DeltaH = 10
+DeltaH = 1
 # Values below 20 reflect a hard ferromagnet - (high coercivity, lower saturation mag)
 # Values above 40 reflect a soft ferromagnet - (low coercivity, higher sat mag)
-Nfirst = 125 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
-Ndown = 250
-Nup = 250
-val = 250 # sample value of H applied field (A/m)
+Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
+Ndown = 2500
+Nup = 2500
+val = 503 # sample value of H applied field (A/m)
 
 for i in range(Nfirst):
     H.append(H[i] + DeltaH)
@@ -64,9 +71,22 @@ for i in range(Nfirst + Ndown + Nup):
     M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
     if (H[i] == val):
         B_field = H[i]*mu0*(1000.0)
+        data_x = [float(H[i])]
+        data_y = [float(M[i])]
+        print data_y
         print str(B_field) + ' Teslas'
+        plt.plot(data_x, data_y, 'or')
 
 plt.xlabel('Applied magnetic field H (A/m)')
 plt.ylabel('Magnetization M (MA/m)')
 plt.plot(H, M)
+# reducing anhysteric magnetization range to upper curve values
+startAn = Nfirst + Ndown
+endAn = Nfirst + Nup
+Man_up = Man[Nfirst:endAn]
+H_an = H[Nfirst:endAn]
+# added polyfit - v1.2
+polynomial = np.polyfit(H_an,Man_up, 7)
+p = np.poly1d(polynomial)
+plt.plot(H_an, p(H_an),'--')
 plt.show()
