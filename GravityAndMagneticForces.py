@@ -38,14 +38,14 @@ class Levitron(Magnet):
         pass
     def field(self, current, position):
         # depends on H-Field
-        # NOTHING HERE omg
+        # NOTHING HERE 
         # can't proceed without defining field for permanent magnet
-        pass
+        return vec(0, 0, 1)
     # Magnetic Field Strength, H:
     def fieldStrength(self, current, position):
     	return self.field(current, position) / self.x_M
     def magMoment(self, fieldStrength):
-    	return self.x_M * self.fieldStrength()
+    	return self.x_M * self.fieldStrength(1, 1)
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops, pose=None):
@@ -104,12 +104,6 @@ class Solenoid(Magnet):
         B = mu0/4 * pi * self.current * Bi
         return B
 
-	def force(self, position, magMoment_val):
-		# Taking field from the above method
-		self.field = field()
-		magMoment = Levitron.magMoment()
-		return np.gradient(field * magMoment)
-
 
 class Model(object):
     def __init__(self,solenoid,magnet):
@@ -129,25 +123,24 @@ class Model(object):
 
 if __name__ == "__main__":
     magnet = Levitron()
+
     solenoid = Solenoid(1.0,0.01,1.0)
     solenoid.set_current(1.0)
 
     Bs = []
-    Fs = []
-    for i in range(100):
+    # Fs = []
+    for i in range(250):
         z = i * 0.01
         B = solenoid.field(vec(0,0,z))
-        fstr = magnet.fieldStrength(1.0,vec(0,0,z))
-        magMoment_val = magnet.magMoment(fstr)
-        F = Solenoid.force(vec(0,0,z), magMoment_val)
         Bs.append(B[2])
-        Fs.append(F[2])
     print Bs
-    print Fs
     plt.plot(Bs)
     plt.show()
 
     m = Model(solenoid, magnet)
-
-    plt.plot(Fs)
     plt.show()
+
+H = solenoid.field(vec(0, 0, z)) * 1 # 1 represents the constant that we multiply against b to get an H field
+#get the corresponding magnetic susceptibility:
+mag_suscept = hysteresis(H)
+#then dot & 
