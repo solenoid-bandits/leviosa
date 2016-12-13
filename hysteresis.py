@@ -10,6 +10,7 @@ Inspired by the Jiles-Atherton Model, 1984
 
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.interpolate import interp1d
 
 # Permittivity of free space
 mu0 = 4 * np.pi * 1e-7 # H/m
@@ -39,7 +40,7 @@ DeltaH = 1
 Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
 Ndown = 2500
 Nup = 2500
-val = 503 # sample value of H applied field (A/m)
+val = 523 # sample value of H applied field (A/m)
 
 for i in range(Nfirst):
     H.append(H[i] + DeltaH)
@@ -80,13 +81,25 @@ for i in range(Nfirst + Ndown + Nup):
 plt.xlabel('Applied magnetic field H (A/m)')
 plt.ylabel('Magnetization M (MA/m)')
 plt.plot(H, M)
+
 # reducing anhysteric magnetization range to upper curve values
 startAn = Nfirst + Ndown
 endAn = Nfirst + Nup
-Man_up = Man[Nfirst:endAn]
+end = startAn + Ndown
+M_up = M[Nfirst:endAn]
 H_an = H[Nfirst:endAn]
-# added polyfit - v1.2
-polynomial = np.polyfit(H_an,Man_up, 7)
+
+# Polyfit curve - added in v1.2
+polynomial = np.polyfit(H_an,M_up, 4)
 p = np.poly1d(polynomial)
-plt.plot(H_an, p(H_an),'--')
+
+# Interpolation curve - added in v1.3
+H_an2 = H[startAn:end] #FLIPPED IT!
+M_up2 = M_up[::-1] #flipped it twice! woohoo!
+#print 'max',  max(H_an2)
+#print 'H_AN2', H_an2
+print 'H_AN', H_an
+polation = interp1d(H_an2, M_up2)
+
+plt.plot(H_an, p(H_an),'o', H_an2, polation(H_an2),'--')
 plt.show()
