@@ -97,15 +97,15 @@ class Levitron(Magnet):
                 B_field = H[i]*mu0*(1000.0)
                 data_x = [float(H[i])]
                 data_y = [float(M[i])]
-                print data_y
-                print str(B_field) + ' Teslas'
+                # print data_y
+                # print str(B_field) + ' Teslas'
                 # plt.plot(data_x, data_y, 'or')
-        #Commenting this section out because I know it works
+        # Commenting this section out because I know it works
         # plt.xlabel('Applied magnetic field H (A/m)')
         # plt.ylabel('Magnetization M (MA/m)')
         # plt.plot(H, M)
         mag_saturation =  max(M)/pow(10,6)
-        print "magnetic saturation", mag_saturation
+        
 
         # reducing anhysteric magnetization range to upper/lower curve values
         startAn = Nfirst + Ndown
@@ -132,19 +132,21 @@ class Levitron(Magnet):
         # H = B/mu0
         # M = hysteresis(H)
         # BdotM = B*M
-        B_beforevalues = solenoid.field(position - vec(0,0,.00005))
+        B_beforevalues = solenoid.field(position - vec(0,0,.005))
         B_before = B_beforevalues[2]
+        print "B before: " + str(B_before)
         H_before = B_before/mu0
         M_before = self.hysteresis(H_before)
         BdotM_before =B_before * M_before
 
-        B_aftervalues = solenoid.field(position - vec(0,0,.00005))
+        B_aftervalues = solenoid.field(position - vec(0,0,.005))
         B_after = B_aftervalues[2]
+        print "B after: " + str(B_after)
         H_after = B_after/mu0
         M_after = self.hysteresis(H_after)
         BdotM_after = B_after * M_after
 
-        return (BdotM_after - BdotM_before)/.0001
+        return (BdotM_after - BdotM_before)/.01
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops, pose=None):
