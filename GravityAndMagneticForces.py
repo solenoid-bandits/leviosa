@@ -109,9 +109,7 @@ class Model(object):
     def __init__(self,solenoid,magnet):
         self.solenoid = solenoid
         self.magnet = magnet
-
         self.reset()
-
         # params['s_r'] # solenoid radius
         # params['s_l'] # solenoid length
 
@@ -133,14 +131,23 @@ if __name__ == "__main__":
         z = i * 0.01
         B = solenoid.field(vec(0,0,z))
         Bs.append(B[2])
-    print Bs
+    # print Bs
     plt.plot(Bs)
     plt.show()
-
     m = Model(solenoid, magnet)
+    print m.getHvalue()
     plt.show()
 
-H = solenoid.field(vec(0, 0, z)) * 1 # 1 represents the constant that we multiply against b to get an H field
-#get the corresponding magnetic susceptibility:
-mag_suscept = hysteresis(H)
-#then dot & 
+
+# # Method for getting a list of H values, goes in the levitron class
+# def getHvalues(self. solenoid):
+#    	Bs = []
+#    	Hs = []
+#    	dotproductprevious = 0
+#    	deltas = 0
+#    	for i in range(250):
+#        	z = i * 0.01
+#        	B = solenoid.field(vec(0,0,z))
+#        	H = B[2]/mu0
+#        	Hs.append(H)
+#     return Hs

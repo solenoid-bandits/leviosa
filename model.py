@@ -46,10 +46,13 @@ class Levitron(Magnet):
     def __init__(self, pose=None):
         super(Levitron, self).__init__(pose)
         pass
-    def field(self, current, position):
-        # depends on H-Field
-        pass
-    def hysteresis(self, magFieldStr):
+    # def field(self, current, position):
+    #     # depends on H-Field
+    #     pass
+    def hysteresis(self, magFieldStr): 
+        '''
+        given H (magnetic field strength, returns M, which I think is magnetic saturation)
+        '''
         delta = [0]
         Man = [0]
         dMirrdH = [0]
@@ -96,12 +99,13 @@ class Levitron(Magnet):
                 data_y = [float(M[i])]
                 print data_y
                 print str(B_field) + ' Teslas'
-                plt.plot(data_x, data_y, 'or')
-
-        plt.xlabel('Applied magnetic field H (A/m)')
-        plt.ylabel('Magnetization M (MA/m)')
-        plt.plot(H, M)
-        print "magnetic saturation", max(M)/pow(10,6)
+                # plt.plot(data_x, data_y, 'or')
+        #Commenting this section out because I know it works
+        # plt.xlabel('Applied magnetic field H (A/m)')
+        # plt.ylabel('Magnetization M (MA/m)')
+        # plt.plot(H, M)
+        mag_saturation =  max(M)/pow(10,6)
+        print "magnetic saturation", mag_saturation
 
         # reducing anhysteric magnetization range to upper/lower curve values
         startAn = Nfirst + Ndown
@@ -109,14 +113,38 @@ class Levitron(Magnet):
         end = startAn + Ndown
         M_up = M[Nfirst:endAn]
         # for polyfitting ()
-        #H_an = H[Nfirst:endAn]
+        H_an = H[Nfirst:endAn]
+
+        # Copied from hysteresis.py:
+        polynomial = np.polyfit(H_an,M_up, 4)
+        p = np.poly1d(polynomial)
 
         # Interpolation curve - added in v1.3
         H_an2 = H[startAn:end] #FLIPPED IT!
         M_up2 = M_up[::-1]
         polation = interp1d(H_an2, M_up2)
-        plt.plot(H_an, p(H_an),'o', H_an2, polation(H_an2),'--')
-        plt.show()
+        # plt.plot(H_an, p(H_an),'o', H_an2, polation(H_an2),'--')
+        # plt.show()
+        return mag_saturation #just for now
+    def force(self, solenoid, position):
+        # B_values = solenoid.field(position)
+        # B = B_values[2]
+        # H = B/mu0
+        # M = hysteresis(H)
+        # BdotM = B*M
+        B_beforevalues = solenoid.field(position - vec(0,0,.00005))
+        B_before = B_beforevalues[2]
+        H_before = B_before/mu0
+        M_before = self.hysteresis(H_before)
+        BdotM_before =B_before * M_before
+
+        B_aftervalues = solenoid.field(position - vec(0,0,.00005))
+        B_after = B_aftervalues[2]
+        H_after = B_after/mu0
+        M_after = self.hysteresis(H_after)
+        BdotM_after = B_after * M_after
+
+        return (BdotM_after - BdotM_before)/.0001
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops, pose=None):
@@ -175,6 +203,8 @@ class Solenoid(Magnet):
         B = mu0/4 * pi * self.current * Bi
         return B
 
+
+
 class Model(object):
     def __init__(self,solenoid,magnet):
         self.solenoid = solenoid
@@ -193,16 +223,22 @@ class Model(object):
 
 if __name__ == "__main__":
     magnet = Levitron()
-    solenoid = Solenoid(1.0,0.01,1.0)
+    solenoid = Solenoid(1.0,0.01,100.0)
     solenoid.set_current(1.0)
 
     Bs = []
+    forces = []
     for i in range(100):
         z = i * 0.01
+        force = magnet.force(solenoid, vec(0,0,z))
+        print "force = " + str(force)
+        forces.append(force)
         B = solenoid.field(vec(0,0,z))
         Bs.append(B[2])
     print Bs
-    plt.plot(Bs)
-    plt.show()
-
+    # plt.plot(Bs)
+    # plt.show()
+    print forces
+    # plt.plot(Bs)
+    # plt.show()
     m = Model(solenoid, magnet)
