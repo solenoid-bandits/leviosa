@@ -1,10 +1,12 @@
 """
 Hysteresis module by Anderson Ang
-V1.2
+V1.3
 Changelog
 - Refined delta function to have a step value of 1
 - Added plot points to find specific M value for a given H (on all curves)
 - Added anhysteric array splices and added polyfit (numpy) for higher M accuracy
+- Added interpolation
+- Added array based input, processes maximum H value, and recurves based on result
 Inspired by the Jiles-Atherton Model, 1984
 """
 
@@ -35,8 +37,8 @@ M = [0]
 
 # Tracks change of ext field H (permeance) to magnetization
 DeltaH = 1
-# Values below 20 reflect a hard ferromagnet - (high coercivity, lower saturation mag)
-# Values above 40 reflect a soft ferromagnet - (low coercivity, higher sat mag)
+# Values below 2 reflect a hard ferromagnet - (high coercivity, lower saturation mag)
+# Values above 4 reflect a soft ferromagnet - (low coercivity, higher sat mag)
 Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
 Ndown = 2500
 Nup = 2500
@@ -70,7 +72,7 @@ for i in range(Nfirst + Ndown + Nup):
     dMirrdH.append((Man[i+1] - M[i]) / (k * delta[i+1] - alpha * (Man[i + 1] - M[i])))
     Mirr.append(Mirr[i] + dMirrdH[i + 1] * (H[i+1] - H[i]))
     M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
-    if (H[i] == val):
+    if (H[i] == val): # only detects integers/whole numbers
         B_field = H[i]*mu0*(1000.0)
         data_x = [float(H[i])]
         data_y = [float(M[i])]
@@ -81,21 +83,33 @@ for i in range(Nfirst + Ndown + Nup):
 plt.xlabel('Applied magnetic field H (A/m)')
 plt.ylabel('Magnetization M (MA/m)')
 #plt.plot(H, M)
+plt.plot(H, M)
+print "magnetic saturation", max(M)/pow(10,6)
 
-# reducing anhysteric magnetization range to upper curve values
+# reducing anhysteric magnetization range to upper/lower curve values
 startAn = Nfirst + Ndown
 endAn = Nfirst + Nup
 end = startAn + Ndown
 M_up = M[Nfirst:endAn]
-H_an = H[Nfirst:endAn]
+M_down = Man[endAn:end]
+print M_down
+print M_up
+#H_an = H[Nfirst:endAn]
+
+# Polyfit curve - added in v1.2
+#polynomial = np.polyfit(H_an,M_up, 4)
+#p = np.poly1d(polynomial)
 
 # Interpolation curve - added in v1.3
 H_an2 = H[startAn:end] #FLIPPED IT!
 M_up2 = M_up[::-1] #flipped it twice! woohoo!
+M_down2 = M_down[::-1]
 #print 'max',  max(H_an2)
 #print 'H_AN2', H_an2
 #print 'H_AN', H_an
 polation = interp1d(H_an2, M_up2)
+#print "polation", polation(H_an2)
+polation2 = interp1d(H_an2,M_down2)
 
 plt.plot(H_an2, polation(H_an2),'--')
 plt.show()

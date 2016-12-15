@@ -3,10 +3,21 @@ import numpy as np
 import scipy
 from scipy.integrate import quad as integrate
 from matplotlib import pyplot as plt
+from scipy.interpolate import interp1d
 
 pi = np.pi
-
-mu0 = 4e-7 * pi
+# Permittivity of free space
+mu0 = 4e-7 * pi # H/m
+# Scale of mag field strength
+a = 470 # A/m
+# Mean field param
+alpha = 9.38e-4
+# Weighting of anhysteric vs irreversible magnetization (1 removes Mrev)
+c = 0.0889
+# Sizing of hysteresis
+k = 483 # A/m
+# Saturation magnetization
+Ms = 1.48e6 # A/m
 
 def vec(*args):
     return np.atleast_2d(args).T
@@ -47,20 +58,22 @@ class CylinderGeometry(Geometry):
 class Object(object):
     # Generic Physical Object Class
     # Composed of Uniform Material
-    def __init__(self, geometry, density):
+    def __init__(self):
         self.orientation = Orientation()
-        self.geometry = geometry
-        self.density = density
-        self.mass = density * geometry.volume()
+        #self.geometry = geometry
+        #self.density = density
+        #self.mass = density * geometry.volume()
     def apply_force(self, f):
-        self.orientation.lin_acc += (f / self.mass)
+        pass
+        #self.orientation.lin_acc += (f / self.mass)
         #self.oritentation.ang_acc += ...
     def update(self, dt):
-        self.orientation.update(dt)
+        pass
+        #self.orientation.update(dt)
 
 class Magnet(object):
-    def __init__(self, geometry, density):
-        super(Magnet,self).__init__(geometry, density)
+    def __init__(self):
+        super(Magnet,self).__init__()
         pass
     def field(self, current, position):
         pass
@@ -72,19 +85,112 @@ class Levitron(Magnet):
         super(Levitron, self).__init__()
         self.density = density
         self.mass = geometry.volume() * density
-        pass
-    def field(self, current, position):
-        # depends on H-Field
-        pass
     def apply_force(self, f):
         pass
     def update(self,dt):
         pass
+    def hysteresis(self, magFieldStr):
+        '''
+        given H (magnetic field strength, returns M, which I think is magnetic saturation)
+        '''
+        delta = [0]
+        Man = [0]
+        dMirrdH = [0]
+        Mirr = [0]
+        M = [0]
+        H = [0]
+
+        # Tracks change of ext field H (permeance) to magnetization
+        DeltaH = 1
+        # Values below 2 reflect a hard ferromagnet - (high coercivity, lower saturation mag)
+        # Values above 4 reflect a soft ferromagnet - (low coercivity, higher sat mag)
+        Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
+        Ndown = 2500
+        Nup = 2500
+        # Value saves the magnetic field strength into the right magnitude
+        val = magFieldStr*100.0 # sample value of H applied field (kA/m) (actual x 10^(-3))
+
+        for i in range(Nfirst):
+            H.append(H[i] + DeltaH)
+
+        for i in range(Ndown):
+            H.append(H[-1] - DeltaH)
+
+        for i in range(Nup):
+            H.append(H[-1] + DeltaH)
+
+        for i in range(len(H) -1):
+            if H[i + 1] > H[i]: # determines the direction of movement
+                delta.append(1)
+            else:
+                delta.append(-1)
+
+        def L(x):
+            return (np.cosh(x) / np.sinh(x)) - (1 / x)
+
+        for i in range(Nfirst + Ndown + Nup):
+            Man.append(Ms * (1 / np.tanh((H[i + 1] + alpha * M[i]) / a) - a / (H[i + 1] + alpha * M[i])))
+            dMirrdH.append((Man[i+1] - M[i]) / (k * delta[i+1] - alpha * (Man[i + 1] - M[i])))
+            Mirr.append(Mirr[i] + dMirrdH[i + 1] * (H[i+1] - H[i]))
+            M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
+            """if (H[i] == val): # defunct portion
+                B_field = H[i]*mu0*(1000.0)
+                data_x = [float(H[i])]
+                data_y = [float(M[i])]
+                print str(B_field) + ' Teslas'
+                plt.plot(data_x, data_y, 'or')"""
+
+        # For plot debugging - disabled by default
+        #plt.xlabel('Applied magnetic field H (A/m)')
+        #plt.ylabel('Magnetization M (MA/m)')
+        #plt.plot(H, M)
+        mag_saturation =  max(M)/pow(10,6)
+
+
+        # reducing anhysteric magnetization range to upper/lower curve values
+        startAn = Nfirst + Ndown
+        endAn = Nfirst + Nup
+        end = startAn + Ndown
+        M_up = M[Nfirst:endAn]
+
+        # Interpolation curve - added in v1.3
+        H_an2 = H[startAn:end] #FLIPPED IT!
+        M_up2 = M_up[::-1]
+        polation = interp1d(H_an2, M_up2)
+        returnMag = polation(val)/pow(10,6)
+
+        #print returnMag, "MA/m" #shows you the magnetization value being returned
+
+        #plt.plot(val, polation(val),'or',H_an2, polation(H_an2),'-')
+        #plt.show()
+        return returnMag
+
+    def force(self, solenoid, position):
+
+        B_values = solenoid.field(position)
+        B = B_values[2] # z-comt
+        H = B/mu0
+        M = self.hysteresis(H)
+        BdotM = B*M
+
+        # B_beforevalues = solenoid.field(position - vec(0,0,.00005))
+        # B_before = B_beforevalues[2]
+        # H_before = B_before/mu0
+        # M_before = self.hysteresis(H_before)
+        # BdotM_before = B_before * M_before
+
+        B_aftervalues = solenoid.field(position + vec(0,0,.00005))
+        B_after = B_aftervalues[2]
+        H_after = B_after/mu0
+        M_after = self.hysteresis(H_after)
+        BdotM_after = B_after * M_after
+
+        return (BdotM_after - BdotM)/.00005
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops):
         # Solenoid with origin at its center
-        super(Solenoid, self).__init__(Geometry(), 0)
+        super(Solenoid, self).__init__()
         self.radius = radius
         self.length = length
         self.loops = loops
@@ -163,15 +269,37 @@ if __name__ == "__main__":
     geom = CylinderGeometry(0.1, 0.1)
     magnet = Levitron(geom, 0.5)
     solenoid = Solenoid(1.0,0.01,1.0)
-    solenoid.set_current(1.0)
+    #solenoid.set_current(1.0)
 
     Bs = []
-    for i in range(100):
-        z = i * 0.01
-        B = solenoid.field(vec(0,0,z))
-        Bs.append(B[2])
-    print Bs
-    plt.plot(Bs)
-    plt.show()
+    forces = []
 
+    initial_position = vec(0, 0, -50.0) # arbitrary starting position
+
+    position = initial_position.copy()
+
+    #for t in np.linspace(0.0,1.0,100):
+    #    magnetic_force = magnet.force(solenoid,position)
+    #    gravity = -9.8
+    #    net_force = magnetic_force + gravity
+    #    print magnetic_force 
+
+    for i in range(-50, 1):
+        print "i value = ", i
+        z = i * 0.01
+        force = magnet.force(solenoid, vec(0,0,z))
+        print "force = " + str(force)
+        forces.append(force)
+        forces_corrected = forces[::-1] # this is the correct force array
+        # B = solenoid.field(vec(0,0,z))
+        # Bs.append(B[2])
+
+    # print Bs
+    # plt.plot(Bs)
+    # plt.show()
+    print forces_corrected
+    #plt.plot(forces_corrected)
+    #plt.xlabel('position')
+    #plt.ylabel('Force due to Magnetism')
+    #plt.show()
     m = Model(solenoid, magnet)
