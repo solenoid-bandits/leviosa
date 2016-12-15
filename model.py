@@ -49,7 +49,7 @@ class Levitron(Magnet):
     # def field(self, current, position):
     #     # depends on H-Field
     #     pass
-    def hysteresis(self, magFieldStr): 
+    def hysteresis(self, magFieldStr):
         '''
         given H (magnetic field strength, returns M, which I think is magnetic saturation)
         '''
@@ -67,8 +67,8 @@ class Levitron(Magnet):
         Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
         Ndown = 2500
         Nup = 2500
-        # switch to magField when complete
-        val = 523 # sample value of H applied field (kA/m) (actual x 10^(-3))
+        # Value saves the magnetic field strength into the right magnitude
+        val = magFieldStr*100.0 # sample value of H applied field (kA/m) (actual x 10^(-3))
 
         for i in range(Nfirst):
             H.append(H[i] + DeltaH)
@@ -93,39 +93,38 @@ class Levitron(Magnet):
             dMirrdH.append((Man[i+1] - M[i]) / (k * delta[i+1] - alpha * (Man[i + 1] - M[i])))
             Mirr.append(Mirr[i] + dMirrdH[i + 1] * (H[i+1] - H[i]))
             M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
-            if (H[i] == val): # only detects integers/whole numbers
+            """if (H[i] == val): # defunct portion
                 B_field = H[i]*mu0*(1000.0)
                 data_x = [float(H[i])]
                 data_y = [float(M[i])]
-                # print data_y
-                # print str(B_field) + ' Teslas'
-                # plt.plot(data_x, data_y, 'or')
-        # Commenting this section out because I know it works
-        # plt.xlabel('Applied magnetic field H (A/m)')
-        # plt.ylabel('Magnetization M (MA/m)')
-        # plt.plot(H, M)
+                print str(B_field) + ' Teslas'
+                plt.plot(data_x, data_y, 'or')"""
+
+        # For plot debugging - disabled by default
+        #plt.xlabel('Applied magnetic field H (A/m)')
+        #plt.ylabel('Magnetization M (MA/m)')
+        #plt.plot(H, M)
         mag_saturation =  max(M)/pow(10,6)
-        
+
 
         # reducing anhysteric magnetization range to upper/lower curve values
         startAn = Nfirst + Ndown
         endAn = Nfirst + Nup
         end = startAn + Ndown
         M_up = M[Nfirst:endAn]
-        # for polyfitting ()
-        H_an = H[Nfirst:endAn]
-
-        # Copied from hysteresis.py:
-        polynomial = np.polyfit(H_an,M_up, 4)
-        p = np.poly1d(polynomial)
 
         # Interpolation curve - added in v1.3
         H_an2 = H[startAn:end] #FLIPPED IT!
         M_up2 = M_up[::-1]
         polation = interp1d(H_an2, M_up2)
-        # plt.plot(H_an, p(H_an),'o', H_an2, polation(H_an2),'--')
-        # plt.show()
-        return mag_saturation #just for now
+        returnMag = polation(val)/pow(10,6)
+
+        print returnMag, "MA/m" #shows you the magnetization value being returned
+
+        #plt.plot(val, polation(val),'or',H_an2, polation(H_an2),'-')
+        #plt.show()
+        return returnMag
+
     def force(self, solenoid, position):
         # B_values = solenoid.field(position)
         # B = B_values[2]
