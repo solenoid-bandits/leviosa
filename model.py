@@ -140,12 +140,10 @@ class Hysteresis(object):
         self.max_M = max(M_up2)
 
     def M(self, H):
-        polation = self.polation
         #if polation(val) > self.max_H:
         #    returnMag = max(polation(M_up2))/pow(10,6)
         #else:
-        print H
-        m = polation(H)
+        m = self.polation(H)
         if m > self.max_M:
             return self.max_M
         else:
@@ -167,34 +165,28 @@ class Levitron(Magnet):
         pass
     def update(self,dt):
         pass
-    def hysteresis(self, magFieldStr):
-        m = self.hysteresis_prop.M(magFieldStr) * self.volume
-        #print 'm' ,m
+    def hysteresis(self, H):
+        m = self.hysteresis_prop.M(H)
+        m *= self.volume
         return m
 
     def force(self, solenoid, position):
 
-        B_values = solenoid.field(position)
-        B = B_values[2] # z-comt
-        #print B
-        H = B/mu0
-        #print 'H', H
-        M = self.hysteresis(H)
-        BdotM = B*M
+        def BM(pos):
+            B = solenoid.field(pos)[2] # Z component only
+            H = B/mu0
+            M = self.hysteresis(H)
+            return B*M
 
-        # B_beforevalues = solenoid.field(position - vec(0,0,.00005))
-        # B_before = B_beforevalues[2]
-        # H_before = B_before/mu0
-        # M_before = self.hysteresis(H_before)
-        # BdotM_before = B_before * M_before
+        delta = .0005
 
-        B_aftervalues = solenoid.field(position + vec(0,0,.00005))
-        B_after = B_aftervalues[2]
-        H_after = B_after/mu0
-        M_after = self.hysteresis(H_after)
-        BdotM_after = B_after * M_after
+        cur = BM(position)
+        prv = BM(position - vec(0,0,delta))
+        #nxt = BM(position + vec(0,0,delta))
 
-        return (BdotM_after - BdotM)/.00005
+        d1 = (cur - prv) / delta 
+        #d2 = (nxt - cur) / delta
+        return d1
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops):
@@ -273,16 +265,16 @@ class Model(object):
 #    #o.velocity += (f/o.mass) * dt
 
 if __name__ == "__main__":
-    geom = CylinderGeometry(0.015, 0.015) # r 10cm, h 10cm
-    magnet = Levitron(geom, 7874) # density in kg/m^3
+    geom = CylinderGeometry(0.015, 0.02) # r 10cm, h 10cm
+    magnet = Levitron(geom, 2000) # density in kg/m^3 of neodymium is 7000, but reduced to 2000
 
-    solenoid = Solenoid(0.03,0.15,200.0) # radius, length, loops
-    solenoid.set_current(5.0)
+    solenoid = Solenoid(0.03,0.15,80.0) # radius, length, loops
+    solenoid.set_current(5.0) #5 Amps
 
     Bs = []
     forces = []
 
-    initial_position = vec(0, 0, -5.0) # arbitrary starting position
+    initial_position = vec(0, 0, -0.03) # arbitrary starting position
 
     position = initial_position.copy()
 
@@ -292,10 +284,12 @@ if __name__ == "__main__":
     #    net_force = magnetic_force + gravity
     #    print magnetic_force 
 
-    zs = np.linspace(-2.0, 0.01, 100) 
+    zs = np.linspace(-1.0, 0.001, 100) 
+
+    gravity = -9.8 * magnet.mass
 
     for z in zs:
-        force = magnet.force(solenoid, vec(0,0,z))
+        force = magnet.force(solenoid, vec(0,0,z)) + gravity
         #print "force = " + str(force)
         #print "gravity = " + str(9.8 * magnet.mass)
         forces.append(force)
@@ -306,13 +300,11 @@ if __name__ == "__main__":
     # plt.plot(Bs)
     # plt.show()
     #print forces_corrected
-    gravity = 9.8 * magnet.mass
-    print '-----------'
-    print gravity
-    print max(forces)
-    print gravity / max(forces)
+
+    print magnet.force(solenoid, position) + gravity
+
     plt.plot(zs, forces)
     plt.xlabel('position')
-    plt.ylabel('Force due to Magnetism')
+    plt.ylabel('Net Force')
     plt.show()
     #m = Model(solenoid, magnet)
