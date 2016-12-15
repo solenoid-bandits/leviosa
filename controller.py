@@ -1,13 +1,13 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import Net from net
+from net import Net
 
 class Controller(object):
     def __init__(self):
         pass
     def current(self, pos, target, dt):
         # t = time
-        return (target - pos) * 1.0 # proportional-ish.
+        return (target - pos) * 1.0 # proportional
 
 class PIDController(Controller):
     def __init__(self, k_p=1.0, k_i=0.0, k_d=0.0, t=0.0):
@@ -20,14 +20,13 @@ class PIDController(Controller):
         self.e_d = 0
         self.res = 0.0
 
-    def current(self, pos, target, dt):
+    def current(self, err, dt):
         # t = time
         if dt == 0:
             return self.res
 
         k_p, k_i, k_d = self.k_p, self.k_i, self.k_d
 
-        err = target - pos
         self.e_i += err * dt
         self.res = k_p * err + k_i * self.e_i + k_d * (err - self.e_d) / dt;
         self.e_d = err # remember last error
