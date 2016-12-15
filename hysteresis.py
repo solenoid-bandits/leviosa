@@ -76,9 +76,9 @@ for i in range(Nfirst + Ndown + Nup):
         B_field = H[i]*mu0*(1000.0)
         data_x = [float(H[i])]
         data_y = [float(M[i])]
-        print data_y
-        print str(B_field) + ' Teslas'
-        plt.plot(data_x, data_y, 'or')
+        #print data_y
+        #print str(B_field) + ' Teslas'
+        #plt.plot(data_x, data_y, 'or')
 
 plt.xlabel('Applied magnetic field H (A/m)')
 plt.ylabel('Magnetization M (MA/m)')
@@ -86,19 +86,26 @@ plt.ylabel('Magnetization M (MA/m)')
 plt.plot(H, M)
 print "magnetic saturation", max(M)/pow(10,6)
 
+max_x = [float(max(H))]
+max_y = [float(max(M))]
+
+plt.plot(max_x, max_y, 'o')
 # reducing anhysteric magnetization range to upper/lower curve values
 startAn = Nfirst + Ndown
 endAn = Nfirst + Nup
 end = startAn + Ndown
 M_up = M[Nfirst:endAn]
 M_down = Man[endAn:end]
+M_down = M_down[::-1]
 print M_down
 print M_up
-#H_an = H[Nfirst:endAn]
+H_an = H[Nfirst:endAn]
 
 # Polyfit curve - added in v1.2
-#polynomial = np.polyfit(H_an,M_up, 4)
-#p = np.poly1d(polynomial)
+polynomial = np.polyfit(H_an,M_up, 30)
+polynomial2 = np.polyfit(H_an,M_down,80)
+p = np.poly1d(polynomial)
+p2 = np.poly1d(polynomial2)
 
 # Interpolation curve - added in v1.3
 H_an2 = H[startAn:end] #FLIPPED IT!
@@ -109,7 +116,7 @@ M_down2 = M_down[::-1]
 #print 'H_AN', H_an
 polation = interp1d(H_an2, M_up2)
 #print "polation", polation(H_an2)
-polation2 = interp1d(H_an2,M_down2)
+#polation2 = interp1d(H_an2,M_down2)
 
-plt.plot(H_an2, polation(H_an2),'--')
+plt.plot(H_an, p2(H_an), 'o', H_an2, polation(H_an2),'--')
 plt.show()
