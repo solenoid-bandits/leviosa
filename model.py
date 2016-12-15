@@ -126,24 +126,26 @@ class Levitron(Magnet):
         return returnMag
 
     def force(self, solenoid, position):
-        # B_values = solenoid.field(position)
-        # B = B_values[2]
-        # H = B/mu0
-        # M = hysteresis(H)
-        # BdotM = B*M
-        B_beforevalues = solenoid.field(position - vec(0,0,.0005))
-        B_before = B_beforevalues[2]
-        H_before = B_before/mu0
-        M_before = self.hysteresis(H_before)
-        BdotM_before = B_before * M_before
 
-        B_aftervalues = solenoid.field(position + vec(0,0,.0005))
+        B_values = solenoid.field(position)
+        B = B_values[2]
+        H = B/mu0
+        M = self.hysteresis(H)
+        BdotM = B*M
+
+        # B_beforevalues = solenoid.field(position - vec(0,0,.00005))
+        # B_before = B_beforevalues[2]
+        # H_before = B_before/mu0
+        # M_before = self.hysteresis(H_before)
+        # BdotM_before = B_before * M_before
+
+        B_aftervalues = solenoid.field(position + vec(0,0,.00005))
         B_after = B_aftervalues[2]
         H_after = B_after/mu0
         M_after = self.hysteresis(H_after)
         BdotM_after = B_after * M_after
 
-        return (BdotM_after - BdotM_before)/.001
+        return (BdotM_after - BdotM)/.00005
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops, pose=None):
@@ -227,7 +229,7 @@ if __name__ == "__main__":
 
     Bs = []
     forces = []
-    for i in range(50):
+    for i in range(-50, 1):
         z = i * 0.01
         force = magnet.force(solenoid, vec(0,0,z))
         print "force = " + str(force)
@@ -239,5 +241,7 @@ if __name__ == "__main__":
     # plt.show()
     print forces
     plt.plot(forces)
+    plt.xlabel('position')
+    plt.ylabel('Force due to Magnetism')
     plt.show()
     m = Model(solenoid, magnet)
