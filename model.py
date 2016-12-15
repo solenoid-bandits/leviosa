@@ -252,11 +252,32 @@ class Solenoid(Magnet):
         return B
 
 class Model(object):
-    def __init__(self,solenoid,magnet):
-        self.solenoid = solenoid
-        self.magnet = magnet
+    def __init__(self):
+
+        geom = CylinderGeometry(0.015, 0.02) # r 10cm, h 10cm
+        self.magnet = Levitron(geom, 2000) # density in kg/m^3 of neodymium is 7000, but reduced to 2000
+
+        self.solenoid = Solenoid(.1,0.15,300.0) # radius, length, loops
+        self.solenoid.set_current(5.0) #5 Amps
 
         self.reset()
+
+        self.position = vec(0,0,-0.02)
+        self.target = -0.03
+
+        self.velocity = vec(0,0,0)
+
+        self.ctrl = PIDController(70,0.3,2.0)
+
+    def update(self, dt):
+        g_f = -9.8 * self.magnet.mass
+        current = self.ctrl.current(self.target - self.position[2], dt)
+        self.solenoid.set_current(current)
+        m_f = self.magnet.force(self.solenoid,self.position)
+        f = vec(0, 0, m_f + g_f)
+
+        self.position += self.velocity * dt
+        self.velocity += (f / self.magnet.mass) * dt
 
         # params['s_r'] # solenoid radius
         # params['s_l'] # solenoid length
@@ -284,7 +305,7 @@ if __name__ == "__main__":
 
     initial_position = vec(0, 0, -0.02) # arbitrary starting position, 2cm below solenoid
     position = initial_position.copy()
-    target_pos = -0.02
+    target_pos = -0.03
     velocity = vec(0,0,0)
 
     gravity = -9.8 * magnet.mass
@@ -292,7 +313,7 @@ if __name__ == "__main__":
     print(magnet.force(solenoid,position))
     print 'gravity', gravity
 
-    ctrl = PIDController(70,1.0,2.0) #k_p, k_i, k_d
+    ctrl = PIDController(70,0.3,2.0) #k_p, k_i, k_d
 
     T_START = 0.0
     T_END = 5.0
@@ -328,24 +349,16 @@ if __name__ == "__main__":
 
     plt.subplot(2,2,1)
     plt.plot(ts, fs)
-    plt.title('force')
-    plt.xlabel('time')
-    plt.ylabel('Newtons')
+    plt.title('Force (N)')
     plt.subplot(2,2,2)
     plt.plot(ts, cs)
-    plt.title('current')
-    plt.xlabel('time')
-    plt.ylabel('Amperes')
+    plt.title('Current (A)')
     plt.subplot(2,2,3)
     plt.plot(ts, vs)
-    plt.title('velocity')
-    plt.xlabel('time')
-    plt.ylabel('m/s')
+    plt.title('Velocity (m/s)')
     plt.subplot(2,2,4)
     plt.plot(ts, ps)
-    plt.title('position')
-    plt.xlabel('time')
-    plt.ylabel('m')
+    plt.title('Position (m)')
 
     plt.show()
     m = Model(solenoid, magnet)
