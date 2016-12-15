@@ -126,8 +126,6 @@ class Hysteresis(object):
         #plt.xlabel('Applied magnetic field H (A/m)')
         #plt.ylabel('Magnetization M (MA/m)')
         #plt.plot(H, M)
-        mag_saturation =  max(M)/pow(10,6)
-
 
         # reducing anhysteric magnetization range to upper/lower curve values
         startAn = Nfirst + Ndown
@@ -146,17 +144,15 @@ class Hysteresis(object):
         #if polation(val) > self.max_H:
         #    returnMag = max(polation(M_up2))/pow(10,6)
         #else:
-        returnMag = polation(H)
-        if polation(H) > self.max_M:
-            returnMag = self.max_M
+        print H
+        m = polation(H)
+        if m > self.max_M:
+            return self.max_M
         else:
-            returnMag = polation(H)
-
+            return m
         #print returnMag, "MA/m" #shows you the magnetization value being returned
-
         #plt.plot(val, polation(val),'or',H_an2, polation(H_an2),'-')
         #plt.show()
-        return returnMag
 
 class Levitron(Magnet):
     # The object to levitate
@@ -277,11 +273,11 @@ class Model(object):
 #    #o.velocity += (f/o.mass) * dt
 
 if __name__ == "__main__":
-    geom = CylinderGeometry(0.01, 0.01) # r 10cm, h 10cm
+    geom = CylinderGeometry(0.015, 0.015) # r 10cm, h 10cm
     magnet = Levitron(geom, 7874) # density in kg/m^3
 
-    solenoid = Solenoid(0.05,0.10,20.0) # radius, length, loops
-    solenoid.set_current(15.0)
+    solenoid = Solenoid(0.03,0.15,200.0) # radius, length, loops
+    solenoid.set_current(5.0)
 
     Bs = []
     forces = []
@@ -296,7 +292,7 @@ if __name__ == "__main__":
     #    net_force = magnetic_force + gravity
     #    print magnetic_force 
 
-    zs = np.linspace(-2.0, 2.0, 100) 
+    zs = np.linspace(-2.0, 0.01, 100) 
 
     for z in zs:
         force = magnet.force(solenoid, vec(0,0,z))
@@ -310,7 +306,11 @@ if __name__ == "__main__":
     # plt.plot(Bs)
     # plt.show()
     #print forces_corrected
-    print 9.8 * magnet.mass
+    gravity = 9.8 * magnet.mass
+    print '-----------'
+    print gravity
+    print max(forces)
+    print gravity / max(forces)
     plt.plot(zs, forces)
     plt.xlabel('position')
     plt.ylabel('Force due to Magnetism')
