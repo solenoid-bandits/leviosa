@@ -4,6 +4,7 @@ import scipy
 from scipy.integrate import quad as integrate
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
+from controller import PIDController
 
 pi = np.pi
 # Permittivity of free space
@@ -20,7 +21,7 @@ k = 483 # A/m
 Ms = 1.48e6 # A/m
 
 def vec(*args):
-    return np.atleast_2d(args).T
+    return np.atleast_2d(args).T.astype(np.float32)
 
 def R(x,y,z):
     # Rotation Matrix
@@ -143,6 +144,13 @@ class Hysteresis(object):
         #if polation(val) > self.max_H:
         #    returnMag = max(polation(M_up2))/pow(10,6)
         #else:
+        
+        # Squash
+        if H >= 1700:
+            H = 1700
+        elif H <= -1700:
+            H = -1700
+
         m = self.polation(H)
         if m > self.max_M:
             return self.max_M
@@ -268,43 +276,76 @@ if __name__ == "__main__":
     geom = CylinderGeometry(0.015, 0.02) # r 10cm, h 10cm
     magnet = Levitron(geom, 2000) # density in kg/m^3 of neodymium is 7000, but reduced to 2000
 
-    solenoid = Solenoid(0.03,0.15,80.0) # radius, length, loops
+    solenoid = Solenoid(.1,0.15,300.0) # radius, length, loops
     solenoid.set_current(5.0) #5 Amps
 
     Bs = []
     forces = []
 
-    initial_position = vec(0, 0, -0.03) # arbitrary starting position
-
+    initial_position = vec(0, 0, -0.02) # arbitrary starting position, 2cm below solenoid
     position = initial_position.copy()
-
-    #for t in np.linspace(0.0,1.0,100):
-    #    magnetic_force = magnet.force(solenoid,position)
-    #    gravity = -9.8
-    #    net_force = magnetic_force + gravity
-    #    print magnetic_force 
-
-    zs = np.linspace(-1.0, 0.001, 100) 
+    target_pos = -0.02
+    velocity = vec(0,0,0)
 
     gravity = -9.8 * magnet.mass
 
-    for z in zs:
-        force = magnet.force(solenoid, vec(0,0,z)) + gravity
-        #print "force = " + str(force)
-        #print "gravity = " + str(9.8 * magnet.mass)
-        forces.append(force)
-        # B = solenoid.field(vec(0,0,z))
-        # Bs.append(B[2])
+    print(magnet.force(solenoid,position))
+    print 'gravity', gravity
 
-    # print Bs
-    # plt.plot(Bs)
-    # plt.show()
-    #print forces_corrected
+    ctrl = PIDController(70,1.0,2.0) #k_p, k_i, k_d
 
-    print magnet.force(solenoid, position) + gravity
+    T_START = 0.0
+    T_END = 5.0
+    T_N = 1000
+    ts = np.linspace(T_START, T_END, T_N)
+    
+    cs = []
+    fs = []
+    ps = []
+    vs = []
 
-    plt.plot(zs, forces)
-    plt.xlabel('position')
-    plt.ylabel('Net Force')
+    for i in range(T_N):
+        dt = (ts[i] - ts[i-1]) if i>0 else 0.0
+        #current = ctrl.current(-velocity[2],dt) #counteract velocity
+        current = ctrl.current(target_pos - position[2],dt) #counteract velocity
+        solenoid.set_current(current)
+        magnetic_force = magnet.force(solenoid,position)
+        net_force = vec(0, 0, magnetic_force + gravity)
+        print 'net force', net_force[2][0]
+        print 'magnetic force', magnetic_force
+        print 'velocity', velocity[2][0]
+        print 'current', current
+
+        position += velocity * dt 
+        velocity += (net_force / magnet.mass) * dt # f=ma, a=f/m
+
+        fs.append(net_force[2][0])
+        cs.append(current)
+        vs.append(velocity[2][0])
+        ps.append(position[2][0])
+
+    plt.suptitle('PID Control of Magnetic Levitation System')
+
+    plt.subplot(2,2,1)
+    plt.plot(ts, fs)
+    plt.title('force')
+    plt.xlabel('time')
+    plt.ylabel('Newtons')
+    plt.subplot(2,2,2)
+    plt.plot(ts, cs)
+    plt.title('current')
+    plt.xlabel('time')
+    plt.ylabel('Amperes')
+    plt.subplot(2,2,3)
+    plt.plot(ts, vs)
+    plt.title('velocity')
+    plt.xlabel('time')
+    plt.ylabel('m/s')
+    plt.subplot(2,2,4)
+    plt.plot(ts, ps)
+    plt.title('position')
+    plt.xlabel('time')
+    plt.ylabel('m')
+
     plt.show()
-    #m = Model(solenoid, magnet)
+    m = Model(solenoid, magnet)
