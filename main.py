@@ -1,11 +1,12 @@
+#!/usr/bin/python
 from simulator import Simulator
 from model import Model
 import pygame
 
 scale = 2000.
 
-WIDTH = 900
-HEIGHT = 900
+WIDTH = 500
+HEIGHT = 500
 
 class SolenoidGraphics(object):
     def __init__(self, base):
@@ -18,13 +19,14 @@ class SolenoidGraphics(object):
         x = WIDTH / 2 # middle
         w = self.w
         h = self.l / (2 * self.N)
-        print h
-        skip = 8
+        t = max(h,2)
+
+        skip = t*2/h
         for i in range(int(self.N)):
             if i % skip == 0:
                 y = HEIGHT/2 - i * h # this is the bottom
-                rect = (x-w/2,y-h,w,max(h,2))
-                pygame.draw.rect(screen,(0,0,0),rect,0)
+                rect = (x-w/2,y-h,w,t)
+                pygame.draw.rect(screen,(128,64,0),rect,0)
         
 class LevitronGraphics(object):
     def __init__(self, base):
@@ -39,14 +41,12 @@ class LevitronGraphics(object):
         h = self.h 
 
         rect = (x-w/2,y-h/2,w,h)
-        pygame.draw.rect(screen,(0,255,0),rect,0)
+        pygame.draw.rect(screen,(128,228,255),rect,0)
+        pygame.draw.rect(screen,(64,196,255),rect,5)
 
     def update(self, position):
         self.position[1] = HEIGHT/2 + (-scale * position) # flip y axis coord.
 
-model = None
-solenoid = None
-levitron = None
 
 def update():
     model.update(0.005) # dt in ec
@@ -63,6 +63,18 @@ def main():
     simulator = Simulator(WIDTH,HEIGHT)
     simulator.add('solenoid', solenoid)
     simulator.add('levitron', levitron)
+
+    def update():
+        model.update(0.005) # dt in ec
+        k_u, k_d = simulator.get_keys()
+        print k_u, k_d
+        if k_u:
+            model.position += 0.01
+        if k_d:
+            model.position -= 0.01
+        #solenoid.update() # --> unnecessary
+        levitron.update(model.position[2])
+
     simulator.run(update) ## calls callback function on every run sequence
 
 if __name__ == "__main__":
