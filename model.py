@@ -68,7 +68,7 @@ class Levitron(Magnet):
         Ndown = 5000
         Nup = 5000
         # Value saves the magnetic field strength into the right magnitude
-        val = magFieldStr*100 # sample value of H applied field (kA/m) (actual x 10^(-3))
+        val = magFieldStr# sample value of H applied field (kA/m) (actual x 10^(-3))
 
         for i in range(Nfirst):
             H.append(H[i] + DeltaH)
@@ -101,9 +101,9 @@ class Levitron(Magnet):
                 plt.plot(data_x, data_y, 'or')"""
 
         # For plot debugging - disabled by default
-        plt.xlabel('Applied magnetic field H (A/m)')
-        plt.ylabel('Magnetization M (MA/m)')
-        plt.plot(H, M)
+        #plt.xlabel('Applied magnetic field H (A/m)')
+        #plt.ylabel('Magnetization M (MA/m)')
+        #plt.plot(H, M)
         mag_saturation =  max(M)/pow(10,6)
 
 
@@ -117,8 +117,8 @@ class Levitron(Magnet):
         H_an2 = H[startAn:end] #FLIPPED IT!
         M_up2 = M_up[::-1]
         polation = interp1d(H_an2, M_up2)
-        if polation(val) > max(polation(M_up2)):
-            returnMag = max(polation(M_up2))/pow(10,6)
+        if polation(val) > max(M_up2):
+            returnMag = (max(M_up2))/pow(10,6)
         else:
             returnMag = polation(val)/pow(10,6)
 
