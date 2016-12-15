@@ -78,18 +78,8 @@ class Magnet(object):
     def field(self, current, position):
         pass
 
-class Levitron(Magnet):
-    # The object to levitate
-    # Assumed to be neodymium, cylindrical
-    def __init__(self, geometry, density):
-        super(Levitron, self).__init__()
-        self.density = density
-        self.mass = geometry.volume() * density
-    def apply_force(self, f):
-        pass
-    def update(self,dt):
-        pass
-    def hysteresis(self, magFieldStr):
+class Hysteresis(object):
+    def __init__(self):
         '''
         given H (magnetic field strength, returns M, which I think is magnetic saturation)
         '''
@@ -101,15 +91,14 @@ class Levitron(Magnet):
         H = [0]
 
         # Tracks change of ext field H (permeance) to magnetization
-        DeltaH = 1
+        DeltaH = 0.7
         # Values below 2 reflect a hard ferromagnet - (high coercivity, lower saturation mag)
         # Values above 4 reflect a soft ferromagnet - (low coercivity, higher sat mag)
-        Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
-        Ndown = 2500
-        Nup = 2500
-
+        Nfirst = 2500 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
+        Ndown = 5000
+        Nup = 5000
         # Value saves the magnetic field strength into the right magnitude
-        val = magFieldStr*1e-3 # sample value of H applied field (kA/m) (actual x 10^(-3))
+        val = magFieldStr # sample value of H applied field (kA/m) (actual x 10^(-3))
 
         for i in range(Nfirst):
             H.append(H[i] + DeltaH)
@@ -136,9 +125,9 @@ class Levitron(Magnet):
             M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
 
         # For plot debugging - disabled by default
-        #plt.xlabel('Applied magnetic field H (A/m)')
-        #plt.ylabel('Magnetization M (MA/m)')
-        #plt.plot(H, M)
+        plt.xlabel('Applied magnetic field H (A/m)')
+        plt.ylabel('Magnetization M (MA/m)')
+        plt.plot(H, M)
         mag_saturation =  max(M)/pow(10,6)
 
 
@@ -151,7 +140,15 @@ class Levitron(Magnet):
         # Interpolation curve - added in v1.3
         H_an2 = H[startAn:end] #FLIPPED IT!
         M_up2 = M_up[::-1]
-        polation = interp1d(H_an2, M_up2)
+        self.polation = interp1d(H_an2, M_up2)
+        self.max_H = max(polation(M_up2))
+        # ...
+
+    def M(self, H):
+        polation = self.polation
+        #if polation(val) > self.max_H:
+        #    returnMag = max(polation(M_up2))/pow(10,6)
+        #else:
         returnMag = polation(val)/pow(10,6)
 
         #print returnMag, "MA/m" #shows you the magnetization value being returned
@@ -160,12 +157,25 @@ class Levitron(Magnet):
         #plt.show()
         return returnMag
 
+class Levitron(Magnet):
+    # The object to levitate
+    # Assumed to be neodymium, cylindrical
+    def __init__(self, geometry, density):
+        super(Levitron, self).__init__()
+        self.density = density
+        self.mass = geometry.volume() * density
+    def apply_force(self, f):
+        pass
+    def update(self,dt):
+        pass
+    def hysteresis(self, magFieldStr):
+
     def force(self, solenoid, position):
 
         B_values = solenoid.field(position)
         B = B_values[2] # z-comt
         H = B/mu0
-        print 'H', H
+        print H
         M = self.hysteresis(H)
         BdotM = B*M
 
@@ -175,13 +185,13 @@ class Levitron(Magnet):
         # M_before = self.hysteresis(H_before)
         # BdotM_before = B_before * M_before
 
-        B_aftervalues = solenoid.field(position + vec(0,0,.00005))
+        B_aftervalues = solenoid.field(position + vec(0,0,.005))
         B_after = B_aftervalues[2]
         H_after = B_after/mu0
         M_after = self.hysteresis(H_after)
         BdotM_after = B_after * M_after
 
-        return (BdotM_after - BdotM)/.00005
+        return (BdotM_after - BdotM)/.005
 
 class Solenoid(Magnet):
     def __init__(self, radius, length, loops):
@@ -265,8 +275,8 @@ if __name__ == "__main__":
     geom = CylinderGeometry(0.03, 0.02) # r 10cm, h 10cm
     magnet = Levitron(geom, 7874) # density in kg/m^3
 
-    solenoid = Solenoid(0.05,0.01,1000.0) # radius, length, loops
-    solenoid.set_current(1.0)
+    solenoid = Solenoid(0.05,0.01,1.0) # radius, length, loops
+    solenoid.set_current(0.0)
 
     Bs = []
     forces = []
