@@ -119,7 +119,7 @@ class Levitron(Magnet):
         polation = interp1d(H_an2, M_up2)
         returnMag = polation(val)/pow(10,6)
 
-        print returnMag, "MA/m" #shows you the magnetization value being returned
+        #print returnMag, "MA/m" #shows you the magnetization value being returned
 
         #plt.plot(val, polation(val),'or',H_an2, polation(H_an2),'-')
         #plt.show()
@@ -230,18 +230,20 @@ if __name__ == "__main__":
     Bs = []
     forces = []
     for i in range(-50, 1):
+        print "i value = ", i
         z = i * 0.01
         force = magnet.force(solenoid, vec(0,0,z))
         print "force = " + str(force)
         forces.append(force)
+        forces_corrected = forces[::-1] # this is the correct force array
         # B = solenoid.field(vec(0,0,z))
         # Bs.append(B[2])
     # print Bs
     # plt.plot(Bs)
     # plt.show()
-    print forces
-    plt.plot(forces)
-    plt.xlabel('position')
-    plt.ylabel('Force due to Magnetism')
-    plt.show()
+    print forces_corrected
+    #plt.plot(forces_corrected)
+    #plt.xlabel('position')
+    #plt.ylabel('Force due to Magnetism')
+    #plt.show()
     m = Model(solenoid, magnet)
