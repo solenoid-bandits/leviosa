@@ -7,7 +7,7 @@ class Controller(object):
         pass
     def current(self, pos, target, dt):
         # t = time
-        return (target - pos) * 1.0 # proportional
+        return (target - pos) * 1.0 # proportional-ish.
 
 class PIDController(Controller):
     def __init__(self, k_p=1.0, k_i=0.0, k_d=0.0, t=0.0):

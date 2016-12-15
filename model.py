@@ -15,34 +15,76 @@ def R(x,y,z):
     # Rotation Matrix
     np.matrix()
 
-class Pose(object):
+class Orientation(object):
+    # Disabled Angular Params for now
     def __init__(self):
-        self.position = vec(0,0,0)
-        self.rotation = vec(0,0,0)
+        self.lin_pos = vec(0,0,0)
+        self.lin_vel = vec(0,0,0)
+        self.lin_acc = vec(0,0,0)
+        #self.ang_pos = vec(0,0,0)
+        #self.ang_vel = vec(0,0,0)
+        #self.ang_acc = vec(0,0,0)
+    def update(self, dt):
+        self.lin_pos += self.lin_vel * dt
+        self.lin_vel += self.lin_acc * dt
+        #self.ang_pos += self.ang_vel * dt
+        #self.ang_vel += self.ang_acc * dt
+
+class Geometry(object):
+    def __init__(self):
+        pass
+    def volume(self):
+        return 0
+
+class CylinderGeometry(Geometry):
+    def __init__(self, r, h):
+        self.r = r
+        self.h = h
+        self._volume = pi*r*r*h
+    def volume(self):
+        return self._volume
+
+class Object(object):
+    # Generic Physical Object Class
+    # Composed of Uniform Material
+    def __init__(self, geometry, density):
+        self.orientation = Orientation()
+        self.geometry = geometry
+        self.density = density
+        self.mass = density * geometry.volume()
+    def apply_force(self, f):
+        self.orientation.lin_acc += (f / self.mass)
+        #self.oritentation.ang_acc += ...
+    def update(self, dt):
+        self.orientation.update(dt)
 
 class Magnet(object):
-    def __init__(self, pose=None):
-        if pose:
-            self.pose = pose
-        else:
-            self.pose = Pose()
+    def __init__(self, geometry, density):
+        super(Magnet,self).__init__(geometry, density)
+        pass
     def field(self, current, position):
         pass
 
 class Levitron(Magnet):
     # The object to levitate
-    # Assumed to be neodymium, cylinder
-    def __init__(self, pose=None):
-        super(Levitron, self).__init__(pose)
+    # Assumed to be neodymium, cylindrical
+    def __init__(self, geometry, density):
+        super(Levitron, self).__init__()
+        self.density = density
+        self.mass = geometry.volume() * density
         pass
     def field(self, current, position):
         # depends on H-Field
         pass
+    def apply_force(self, f):
+        pass
+    def update(self,dt):
+        pass
 
 class Solenoid(Magnet):
-    def __init__(self, radius, length, loops, pose=None):
+    def __init__(self, radius, length, loops):
         # Solenoid with origin at its center
-        super(Solenoid, self).__init__(pose)
+        super(Solenoid, self).__init__(Geometry(), 0)
         self.radius = radius
         self.length = length
         self.loops = loops
@@ -112,8 +154,14 @@ class Model(object):
     def reset(self):
         pass
 
+#def apply_force(o, f, dt):
+#    # f = ma
+#    #o.position += o.velocity * dt
+#    #o.velocity += (f/o.mass) * dt
+
 if __name__ == "__main__":
-    magnet = Levitron()
+    geom = CylinderGeometry(0.1, 0.1)
+    magnet = Levitron(geom, 0.5)
     solenoid = Solenoid(1.0,0.01,1.0)
     solenoid.set_current(1.0)
 

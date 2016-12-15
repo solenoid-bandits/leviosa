@@ -80,7 +80,7 @@ for i in range(Nfirst + Ndown + Nup):
 
 plt.xlabel('Applied magnetic field H (A/m)')
 plt.ylabel('Magnetization M (MA/m)')
-plt.plot(H, M)
+#plt.plot(H, M)
 
 # reducing anhysteric magnetization range to upper curve values
 startAn = Nfirst + Ndown
@@ -89,17 +89,13 @@ end = startAn + Ndown
 M_up = M[Nfirst:endAn]
 H_an = H[Nfirst:endAn]
 
-# Polyfit curve - added in v1.2
-polynomial = np.polyfit(H_an,M_up, 4)
-p = np.poly1d(polynomial)
-
 # Interpolation curve - added in v1.3
 H_an2 = H[startAn:end] #FLIPPED IT!
 M_up2 = M_up[::-1] #flipped it twice! woohoo!
 #print 'max',  max(H_an2)
 #print 'H_AN2', H_an2
-print 'H_AN', H_an
+#print 'H_AN', H_an
 polation = interp1d(H_an2, M_up2)
 
-plt.plot(H_an, p(H_an),'o', H_an2, polation(H_an2),'--')
+plt.plot(H_an2, polation(H_an2),'--')
 plt.show()

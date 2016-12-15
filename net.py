@@ -7,12 +7,20 @@ def d_sigmoid(x):
     s = sigmoid(x)
     return s*(1.0-s)
 
+# Parameters Setup
+learning_rate = 0.6
+
+# Transfer Functions Setup
 transfer = sigmoid
 d_transfer = d_sigmoid 
 
 # Learning on-the-fly
 class Layer(object):
     def __init__(self):
+        pass
+    def compute_gradient(self, T):
+        pass
+    def apply_gradient(self,T):
         pass
     def apply(self, X):
         pass
@@ -42,12 +50,11 @@ class DenseLayer(Layer):
             G = T - self.O
         else:
             G = self.nxt.G
-
         self.G = np.dot(G, self.W.T) * d_transfer(self.prv.O)
 
     def apply_gradient(self):
         dW = np.dot(self.I.T, self.G)
-        self.W += 0.6 * dW
+        self.W += learning_rate * dW
         self.B += self.G
 
 class OutputLayer(DenseLayer):
@@ -60,14 +67,26 @@ class OutputLayer(DenseLayer):
 
     def apply_gradient(self):
         dW = np.dot(self.I.T, self.G)
-        self.W += 0.6 * dW
+        self.W += learning_rate * dW
         self.B += self.G
 
 class Net(object):
     def __init__(self, dims):
         self.dims = dims
+        self.L = []
 
-    def train(self):
+    def append(self, l):
+        self.L.append(l)
+
+    def train(self,T):
+        # Must be called after predict(X)
+        for l in reversed(self.L):
+            T = l.compute_gradient(T)
+        for l in self.L:
+            l.apply_gradient()
         pass
-    def predict(self):
-        pass
+
+    def predict(self, X):
+        for l in self.L:
+            X = l.apply(X)
+        return X
