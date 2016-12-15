@@ -4,9 +4,9 @@ from pygame.locals import *
 
 class Simulator(object):
 
-    def __init__(self):
+    def __init__(self, width, height):
         pygame.init()
-        self.screen = pygame.display.set_mode((500,500))
+        self.screen = pygame.display.set_mode((width,height))
         pygame.display.set_caption('Leviosa')
         self.objects = {}
 
@@ -18,7 +18,6 @@ class Simulator(object):
         self.screen.fill((255,255,255))
 
         for o in self.objects.values():
-            print o
             o.draw(self.screen)
 
         pygame.display.flip()

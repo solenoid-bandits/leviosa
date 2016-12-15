@@ -165,6 +165,7 @@ class Levitron(Magnet):
     # Assumed to be neodymium, cylindrical
     def __init__(self, geometry, density):
         super(Levitron, self).__init__()
+        self.geom = geometry
         self.density = density
         self.volume = geometry.volume()
         self.mass = self.volume * density
@@ -255,7 +256,7 @@ class Model(object):
     def __init__(self):
 
         geom = CylinderGeometry(0.015, 0.02) # r 10cm, h 10cm
-        self.magnet = Levitron(geom, 2000) # density in kg/m^3 of neodymium is 7000, but reduced to 2000
+        self.levitron = Levitron(geom, 2000) # density in kg/m^3 of neodymium is 7000, but reduced to 2000
 
         self.solenoid = Solenoid(.1,0.15,300.0) # radius, length, loops
         self.solenoid.set_current(5.0) #5 Amps
@@ -270,20 +271,20 @@ class Model(object):
         self.ctrl = PIDController(70,0.3,2.0)
 
     def update(self, dt):
-        g_f = -9.8 * self.magnet.mass
+        g_f = -9.8 * self.levitron.mass
         current = self.ctrl.current(self.target - self.position[2], dt)
         self.solenoid.set_current(current)
-        m_f = self.magnet.force(self.solenoid,self.position)
+        m_f = self.levitron.force(self.solenoid,self.position)
         f = vec(0, 0, m_f + g_f)
 
         self.position += self.velocity * dt
-        self.velocity += (f / self.magnet.mass) * dt
+        self.velocity += (f / self.levitron.mass) * dt
 
         # params['s_r'] # solenoid radius
         # params['s_l'] # solenoid length
 
-        # params['m_r'] # magnet radius
-        # params['m_l'] # magnet length
+        # params['m_r'] # levitron radius
+        # params['m_l'] # levitron length
 
     def reset(self):
         pass
