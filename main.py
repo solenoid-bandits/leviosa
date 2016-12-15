@@ -67,7 +67,6 @@ def main():
     def update():
         model.update(0.005) # dt in ec
         k_u, k_d = simulator.get_keys()
-        print k_u, k_d
         if k_u:
             model.position += 0.01
         if k_d:

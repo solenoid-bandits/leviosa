@@ -23,6 +23,8 @@ class Simulator(object):
                     self.k_u = True
                 if event.key == pygame.K_DOWN:
                     self.k_d = True
+                if event.key == pygame.K_ESCAPE:
+                    return False
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP:
                     self.k_u = False
