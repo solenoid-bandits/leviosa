@@ -107,8 +107,9 @@ class Levitron(Magnet):
         Nfirst = 1250 # initial magnetization curve range (DO NOT CHANGE as it is basically a vertical axis offset)
         Ndown = 2500
         Nup = 2500
+
         # Value saves the magnetic field strength into the right magnitude
-        val = magFieldStr*100.0 # sample value of H applied field (kA/m) (actual x 10^(-3))
+        val = magFieldStr*1e-3 # sample value of H applied field (kA/m) (actual x 10^(-3))
 
         for i in range(Nfirst):
             H.append(H[i] + DeltaH)
@@ -133,12 +134,6 @@ class Levitron(Magnet):
             dMirrdH.append((Man[i+1] - M[i]) / (k * delta[i+1] - alpha * (Man[i + 1] - M[i])))
             Mirr.append(Mirr[i] + dMirrdH[i + 1] * (H[i+1] - H[i]))
             M.append(c * Man[i + 1] + (1 - c) * Mirr[i + 1])
-            """if (H[i] == val): # defunct portion
-                B_field = H[i]*mu0*(1000.0)
-                data_x = [float(H[i])]
-                data_y = [float(M[i])]
-                print str(B_field) + ' Teslas'
-                plt.plot(data_x, data_y, 'or')"""
 
         # For plot debugging - disabled by default
         #plt.xlabel('Applied magnetic field H (A/m)')
@@ -170,6 +165,7 @@ class Levitron(Magnet):
         B_values = solenoid.field(position)
         B = B_values[2] # z-comt
         H = B/mu0
+        print 'H', H
         M = self.hysteresis(H)
         BdotM = B*M
 
@@ -266,15 +262,16 @@ class Model(object):
 #    #o.velocity += (f/o.mass) * dt
 
 if __name__ == "__main__":
-    geom = CylinderGeometry(0.1, 0.1)
-    magnet = Levitron(geom, 0.5)
-    solenoid = Solenoid(1.0,0.01,1.0)
-    #solenoid.set_current(1.0)
+    geom = CylinderGeometry(0.03, 0.02) # r 10cm, h 10cm
+    magnet = Levitron(geom, 7874) # density in kg/m^3
+
+    solenoid = Solenoid(0.05,0.01,1000.0) # radius, length, loops
+    solenoid.set_current(1.0)
 
     Bs = []
     forces = []
 
-    initial_position = vec(0, 0, -50.0) # arbitrary starting position
+    initial_position = vec(0, 0, -5.0) # arbitrary starting position
 
     position = initial_position.copy()
 
@@ -286,9 +283,10 @@ if __name__ == "__main__":
 
     for i in range(-50, 1):
         print "i value = ", i
-        z = i * 0.01
+        z = i * 0.001
         force = magnet.force(solenoid, vec(0,0,z))
         print "force = " + str(force)
+        print "gravity = " + str(9.8 * magnet.mass)
         forces.append(force)
         forces_corrected = forces[::-1] # this is the correct force array
         # B = solenoid.field(vec(0,0,z))
